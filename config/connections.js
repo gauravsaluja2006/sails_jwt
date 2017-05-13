@@ -89,4 +89,14 @@ module.exports.connections = {
   *                                                                          *
   ***************************************************************************/
 
+
+  pcChdDbConnection: {
+    adapter: 'sails-postgresql',
+    host: '127.0.0.1',
+    user: 'postgres', 
+    password: 'M!ndstrength', 
+    database: 'pcchd' 
+  },
+
+
 };

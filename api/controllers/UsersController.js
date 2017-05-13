@@ -6,8 +6,16 @@
  */
 
 module.exports = {
-	createNewUser: createNewUser
+    createNewUser: createNewUser,
+    login: login,
+    testLoginService: testLoginService
 };
+
+function testLoginService(req, res) {
+    res.json({works: true})
+} 
+
+var bcrypt = require('bcrypt');
 
 // FUNCTION TO HANDLE REQUEST TO CREATE NEW USER
 // @param: first_name - User's First Name
@@ -71,3 +79,68 @@ function createNewUser(req, res) {
     })
 }
 
+function login(req, res) {
+
+    console.log("Login Request: ", req.body);
+
+    // REQUEST BODY
+    var email = req.body.username;
+    var passwordAttempt = req.body.password;
+
+    // FINDING THE USER IN THE DATABASE
+    Users.findOne({
+        or: [
+            { username: email },
+            { email: email }
+        ]
+    }, function(err, user) {
+
+        // ERROR IN FINDING THE USER
+        if (err) {
+            return res.badRequest({
+                error: true,
+                message: 'Some Error Occurred. Please try again later'
+            })
+        }
+
+        // USER NOT FOUND
+        if (!user) {
+            return res.badRequest({
+                error: true,
+                message: 'Invalid Username or Password'
+            })
+        }
+
+
+        bcrypt.compare(passwordAttempt, user.password).then(isPasswordValid => {
+
+            if (isPasswordValid) {
+
+                console.log("Password Valid");
+
+                // THIS IS THE PAYLOAD WHICH WILL BE ENCODED AND SAVED IN THE JWT
+                var userData = {
+                    id: user.id,
+                    first_name: user.first_name,
+                    username: user.username,
+                    someRandomData: {}
+                };
+                console.log("Creating Token");
+                var jwtToken = JWTService.encode(userData);
+                console.log("GOT TOKEN: ", jwtToken);
+
+                res.json({
+                    error: false,
+                    user: user,
+                    token: jwtToken
+                })
+
+            } else {
+
+                console.log("Password InValid");
+                res.json(200, { error: true, message: 'Invalid Password' });
+            }
+        });
+
+    });
+}
